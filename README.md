@@ -22,6 +22,27 @@ All data points are cited. Missing data is marked `"data not available"` — nev
 
 ---
 
+## Installation
+
+This repo contains a single Claude Code skill. Install it so Claude can find it:
+
+```bash
+git clone https://github.com/odalabasmaz/job-seeker.git
+cd job-seeker
+
+# copy into Claude's skills directory
+cp -r . ~/.claude/skills/job-evaluator/
+
+# or symlink (changes in the repo apply immediately)
+ln -s $(pwd) ~/.claude/skills/job-evaluator
+```
+
+Then restart Claude Code. The skill triggers automatically — no slash command needed.
+
+> **Requires Claude Code** — [install it here](https://claude.ai/code) if you haven't already.
+
+---
+
 ## Setup Your Profile
 
 `PROFILE.md` is gitignored — your personal data (salary, employer, contact info) never gets committed.
