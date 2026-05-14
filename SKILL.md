@@ -1,51 +1,67 @@
 ---
 name: job-evaluator
-description: Generates a comprehensive job evaluation report based on a company name or website, tailored to Orhun Dalabasmaz's career profile and expectations. Scans Glassdoor, Kununu, Levels.fyi, LinkedIn, and Remotely.de. Use this skill when the user provides one or more company names or URLs, conducts job research, or uses phrases like "evaluate this company", "should I apply here", "what's the salary range", or "what do employees say".
+description: Given one or more company names or URLs, produces a comprehensive job evaluation report tailored to the candidate profile defined in PROFILE.md. Searches Glassdoor, Kununu, Levels.fyi, LinkedIn, Remotely.de, Xing, Indeed.de, Monster.de, Comprehensive.io, Layoffs.fyi, Hiring.cafe, Builtin.com, and Wellfound.com. Use this skill when the user provides company names or URLs, researches job listings, or uses phrases like "evaluate this company", "should I apply here", "what's the salary", "what are the employee reviews", "compare these companies".
 ---
 
 # Job Evaluator Skill
 
-This skill is used to quickly evaluate companies during Orhun Dalabasmaz's job search process.
+## Step 0 — Load Candidate Profile
 
-## Candidate Profile (Fixed — use in every report)
+Before doing anything else, read the file `PROFILE.md` located in the same directory as this skill.
+Extract the candidate's name, target roles, tech stack, work model preferences, salary floor, equity expectation, and all other fields.
+Use this profile to personalise every section of the report.
+If `PROFILE.md` cannot be found, ask the user to provide their profile before continuing.
 
-- **Name:** Orhun Dalabasmaz
-- **Experience:** 15+ years
-- **Current Role:** Principal Engineer @ Atlassian, Munich
-- **Target Roles:** Principal Engineer, Staff Engineer, SRE, Engineering Manager, Solutions Architect, Team Lead
-- **Priority:** Compensation and job content over role type
-- **Tech Stack:** Java/Kotlin, Python, Spring, AWS (Neptune, EKS, DynamoDB, SQS, Lambda, KMS, S3, CloudFormation), Docker, Kubernetes, Microservices, Kafka, Grafana, Splunk, Datadog, Neo4j, Gremlin/Cypher, CI/CD (Bitbucket/Jenkins), MCP, Claude/Gemini AI integrations
-- **Expertise:** SRE, DevOps, Cloud Architecture (AWS-focused), Distributed Systems, People Management, Technical Leadership, Roadmap Planning, Cross-functional Collaboration, FedRAMP/SOC2/GDPR Compliance
-- **Cloud Preference:** AWS (multi-cloud acceptable)
-- **Work Model:** Remote (anywhere) OR Hybrid/On-site (Munich only)
-- **Employment:** Full-time
-- **Salary:** Minimum €120,000 base + equity preferred
-- **On-call:** Acceptable
-- **Travel:** Low amount acceptable (conferences, office visits)
-- **People Management:** Flexible (IC or EM)
-- **Industry:** SaaS/Cloud preferred, open to others
-- **Language:** English working environment required (German not mandatory)
+---
+
+## Data Integrity Policy
+
+This skill operates in **strict zero-hallucination mode**:
+
+- **Never infer, estimate, or fabricate** any data point not explicitly found in a search result.
+- If a salary range, rating, tech stack, work model, or open position is not present in the source, write **"data not available"**.
+- Do not fill gaps using general market knowledge or training data — only report what the web search actually returns.
+- Do not guess that a company "probably" uses a certain tech stack or "likely" offers equity.
+- If a search returns no relevant results for a specific source, write **"No results found on [source name]"**.
+- Cite the source URL next to every data point.
 
 ---
 
 ## Research Steps
 
-When the user provides a company name or URL, search the following sources via web_search:
+Run the following web searches for each company provided. Parallelize where possible.
 
-1. **Glassdoor:** `[company name] Glassdoor reviews` → Overall score, CEO approval, recommendation rate, pros/cons
-2. **Kununu:** `[company name] Kununu Bewertungen` → German market employee reviews
-3. **Levels.fyi:** `[company name] levels.fyi engineer salary Germany` → Salary data
-4. **LinkedIn:** `[company name] Principal Engineer SRE jobs Munich` → Open positions
-5. **Remotely.de:** `[company name] remotely.de` → Remote job listings
-6. **General:** `[company name] employee benefits Germany equity RSU` → Perks and benefits
+### Reviews & Ratings
+1. **Glassdoor:** `[company name] Glassdoor reviews` → overall rating, CEO approval %, recommendation rate, top pros/cons
+2. **Kununu:** `[company name] Kununu Bewertungen` → German-market employee reviews and rating
 
-If data is unavailable, write "data not found" — **never estimate**.
+### Compensation
+3. **Levels.fyi:** `[company name] levels.fyi engineer salary Germany` → salary by level, location
+4. **Comprehensive.io:** `[company name] site:app.comprehensive.io/benchmarking/postings` → market salary ranges for target roles
+5. **Benefits/Equity:** `[company name] employee benefits Germany equity RSU bonus` → equity structure, bonus, perks
+
+### Job Openings
+Search all sources below. Consolidate all matching positions into one table. Only include roles that match the candidate's target roles from PROFILE.md.
+
+6. **LinkedIn:** `[company name] [target roles] jobs [candidate location preferences]`
+7. **Greenhouse:** `[company name] site:job-boards.greenhouse.io` or `[company name] site:job-boards.eu.greenhouse.io` → direct ATS listings with apply links
+8. **Xing:** `[company name] Xing Stellenangebote [target roles]`
+9. **Indeed.de:** `[company name] indeed.de [target roles]`
+10. **Monster.de:** `[company name] monster.de engineer jobs`
+11. **Remotely.de:** `[company name] remotely.de engineer`
+12. **Hiring.cafe:** `[company name] site:hiring.cafe` or `[company name] hiring.cafe [target role] remote`
+13. **Builtin.com:** `[company name] site:builtin.com [target role]`
+14. **Wellfound.com:** `[company name] site:wellfound.com [target role]`
+15. **Careers page:** `[company name] careers jobs [target roles]`
+
+### Stability
+16. **Layoffs.fyi:** `[company name] layoffs.fyi` → layoff events, dates, headcount reductions
 
 ---
 
 ## Report Format
 
-Generate the following report for each company:
+Produce one report per company using the template below. Write in **English**.
 
 ---
 
@@ -55,66 +71,99 @@ Generate the following report for each company:
 #### ⚡ QUICK OVERVIEW
 | Criteria | Value | Source |
 |----------|-------|--------|
-| Glassdoor Score | X.X / 5 | Glassdoor |
-| Kununu Score | X.X / 5 | Kununu |
-| CEO Approval | XX% | Glassdoor |
-| Would Recommend | XX% | Glassdoor/Kununu |
-| Salary Competitiveness | ⭐⭐⭐⭐⭐ | Levels.fyi/Glassdoor |
+| Glassdoor Rating | X.X / 5 | [Glassdoor](url) |
+| Kununu Rating | X.X / 5 | [Kununu](url) |
+| CEO Approval Rate | XX% | [Glassdoor](url) |
+| Recommendation Rate | XX% | [Glassdoor](url) / [Kununu](url) |
+| Salary Competitiveness | ⭐⭐⭐⭐⭐ | [Levels.fyi](url) / [Comprehensive.io](url) |
+| Recent Layoffs (12 mo) | ✅ None / ⚠️ [date + size] | [Layoffs.fyi](url) |
+
+#### ⚠️ LAYOFF HISTORY
+Summarize layoff events found on Layoffs.fyi or in news results:
+- **[Month Year]:** ~X% of workforce / ~X,XXX employees — [brief reason if stated in source] — [Source](url)
+
+If no layoffs found: `No layoffs recorded on Layoffs.fyi or in recent news.`
 
 #### 💰 SALARY & PACKAGE
-- **Target Role Base Salary:** (cite source)
-- **Equity/Stock:** RSU / ESOP / Stock options available?
-- **Bonus:** Structure?
-- **Benefits:** Health, pension, learning budget, equipment, etc.
+- **Market Range (target roles):** €XXX,XXX – €XXX,XXX base — [source](url)
+- **Reported Salaries at This Company:** [cite source and URL]
+- **Equity:** [what was found, or "data not available"]
+- **Bonus:** [what was found, or "data not available"]
+- **Benefits:** [what was found, or "data not available"]
 
 #### ✅ PROS
-(From employee reviews — most frequently mentioned)
+(From employee reviews — most frequently mentioned. Include source URL per point where possible.)
 - ...
 
 #### ❌ CONS
-(From employee reviews — most frequently mentioned)
+(From employee reviews — most frequently mentioned. Include source URL per point where possible.)
 - ...
 
 #### 🎯 CANDIDATE FIT
+Evaluate against the candidate profile loaded from PROFILE.md. Adapt criteria to the profile.
+
 | Criteria | Status | Notes |
 |----------|--------|-------|
-| Tech Stack (AWS, Java/Kotlin, K8s) | ✅/⚠️/❌ | |
-| Target Role Available | ✅/⚠️/❌ | |
-| Work Model (Remote/Hybrid-Munich) | ✅/⚠️/❌ | |
-| Salary 120k+ Base | ✅/⚠️/❌ | |
-| Equity Available | ✅/⚠️/❌ | |
-| English Working Environment | ✅/⚠️/❌ | |
-| Engineering/IC Culture | ✅/⚠️/❌ | |
+| Tech Stack alignment | ✅/⚠️/❌ | [which stack was confirmed, which was not found] |
+| Target Role Available | ✅/⚠️/❌ | [role name or "none found"] |
+| Work Model match | ✅/⚠️/❌ | [remote/hybrid/on-site — city if relevant] |
+| Salary meets floor | ✅/⚠️/❌ | [salary found vs. floor from profile] |
+| Equity Available | ✅/⚠️/❌ | [type if found, ⚠️ if not found] |
+| Required working language | ✅/⚠️/❌ | [English/other] |
+| Engineering / IC Culture | ✅/⚠️/❌ | [based on reviews — only if explicitly mentioned] |
+| Company Stability | ✅/⚠️/❌ | [layoff history, funding, profitability] |
 
-#### 🔗 SOURCES & OPEN POSITIONS
-- 🔍 Glassdoor: [link]
-- 🔍 Kununu: [link]
-- 💰 Levels.fyi: [link]
-- 💼 LinkedIn Listings: [found positions]
-- 🌐 Remotely.de: [found positions]
+> ⚠️ Only mark ✅ or ❌ if a data point was explicitly found. Use ⚠️ when uncertain due to missing data.
 
-#### 🏁 OVERALL VERDICT
-**Decision:** 🟢 APPLY | 🟡 INVESTIGATE | 🔴 SKIP
+#### 💼 OPEN POSITIONS
+Consolidate all relevant roles found across job sources. Only include roles matching the candidate's target roles.
 
-**Rationale:** (2–3 sentence summary — why this decision?)
+| Title | Source | Location | Work Model | Salary (if listed) | Posted | Link |
+|-------|--------|----------|------------|--------------------|--------|------|
+| [Job Title] | [Source name] | [City / Remote] | Remote / Hybrid / On-site | €XXX,XXX or "not listed" | [date or "recent"] | [Apply](url) |
+
+If no matching roles found: `No open positions found matching the candidate's target roles.`
+
+#### 🔗 SOURCES
+List every source searched and whether it returned relevant data:
+- 🔍 Glassdoor: [link or "no results"]
+- 🔍 Kununu: [link or "no results"]
+- 💰 Levels.fyi: [link or "no results"]
+- 💰 Comprehensive.io: [link or "no results"]
+- 📉 Layoffs.fyi: [link or "no results"]
+- 💼 LinkedIn Jobs: [link or "no results"]
+- 💼 Xing Jobs: [link or "no results"]
+- 💼 Indeed.de: [link or "no results"]
+- 💼 Monster.de: [link or "no results"]
+- 🌐 Remotely.de: [link or "no results"]
+- ☕ Hiring.cafe: [link or "no results"]
+- 🏗️ Builtin.com: [link or "no results"]
+- 🚀 Wellfound.com: [link or "no results"]
+- 🏢 Careers Page: [link or "no results"]
+
+#### 🏁 OVERALL ASSESSMENT
+**Decision:** 🟢 APPLY | 🟡 RESEARCH MORE | 🔴 SKIP
+
+**Rationale:** (2–3 sentences based solely on data found above. Do not speculate beyond what was found.)
 
 ---
 
 ## Multiple Companies
 
-If the user provides more than one company, append a comparison table at the end:
+If the user provides multiple companies, run the full report for each, then append a comparison table:
 
 ### 📊 COMPARISON TABLE
-| Company | Glassdoor | Salary Fit | Stack Fit | Model Fit | Decision |
-|---------|-----------|------------|-----------|-----------|----------|
-| ... | | | | | 🟢/🟡/🔴 |
+| Company | Glassdoor | Salary Fit | Stack Fit | Model Fit | Stability | Decision |
+|---------|-----------|------------|-----------|-----------|-----------|----------|
+| [Name] | X.X / 5 | ✅/⚠️/❌ | ✅/⚠️/❌ | ✅/⚠️/❌ | ✅/⚠️/❌ | 🟢/🟡/🔴 |
 
 ---
 
-## Important Notes
+## Behavioural Rules
 
-- Reports are written in **English**
-- Write "data not found" for missing data — never estimate
-- Use €120k base as the salary threshold for comparison
-- Equity matters: flag with ⚠️ if RSU/ESOP is absent
-- Remote: any city accepted; hybrid/on-site: Munich only
+- Write in **English** regardless of the user's input language.
+- Never produce placeholder text in the final output — if data is missing, say so explicitly.
+- Do not add commentary beyond what was found in sources.
+- Do not suggest the candidate "may want to verify" something that you could search for yourself — search it first.
+- Use the salary floor and equity preference from PROFILE.md as the threshold for ✅/⚠️/❌ in Candidate Fit.
+- Layoffs within the last 12 months: flag as ⚠️ in both QUICK OVERVIEW and CANDIDATE FIT.
